@@ -3,33 +3,33 @@
     <base-config cleartextTrafficPermitted="true"
         tools:ignore="InsecureBaseConfiguration" />
 
+
     <!--证书校验-->
 <!--    <domain-config>-->
-<!--        <domain includeSubdomains="true">sogou.com</domain>-->
+<!--        <domain includeSubdomains="true">www.gohosts.com</domain>-->
 <!--        <trust-anchors>-->
-<!--            &lt;!&ndash;获取证书: openssl s_client -connect sogou.com:443 -servername sogou.com | openssl x509 -out sogou.pem&ndash;&gt;-->
-<!--            <certificates src="@raw/sogou"/>-->
+<!--            <certificates src="@raw/gohosts"/>-->
 <!--        </trust-anchors>-->
 <!--    </domain-config>-->
 
     <!--公钥校验-->
-    <domain-config>
+    <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">www.gohosts.com</domain>
-        <!--zhihu.com公钥校验
-        获取公钥: openssl s_client -connect zhihu.com:443 -servername zhihu.com | openssl x509 -pubkey -noout | openssl rsa -pubin -outform der | openssl dgst -sha256 -binary | openssl enc -base64
-        -->
-        <pin-set expiration="2099-01-01"
-            tools:ignore="MissingBackupPin">
-            <pin digest="SHA-256">7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=</pin>
-        </pin-set>
+<!--        <pin-set expiration="2099-01-01"-->
+<!--            tools:ignore="MissingBackupPin">-->
+<!--            <pin digest="SHA-256">7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=</pin>-->
+<!--        </pin-set>-->
+<!--        <trust-anchors>-->
+<!--            <certificates src="@raw/gohosts"/>-->
+<!--        </trust-anchors>-->
     </domain-config>
 
 
     <!--证书校验-->
 <!--    <domain-config>-->
-<!--        <domain includeSubdomains="true">www.test.com</domain>-->
+<!--        <domain includeSubdomains="true">www.gohosts.com</domain>-->
 <!--        <trust-anchors>-->
-<!--            <certificates src="@raw/server_cert"-->
+<!--            <certificates src="@raw/gohosts"-->
 <!--                tools:ignore="NetworkSecurityConfig" />-->
 <!--        </trust-anchors>-->
 <!--    </domain-config>-->
