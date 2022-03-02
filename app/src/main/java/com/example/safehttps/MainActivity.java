@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
@@ -37,6 +38,7 @@ import okhttp3.Response;
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
     private static final String TAG = "[+]MainActivity";
+    public static SSLContext sslContext = null;
 
 
     TextView responseText;
@@ -64,19 +66,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run(){
 
                     try {
-                        String hostname = "www.gohosts.com";
-                        CertificatePinner certificatePinner = new CertificatePinner.Builder()
-                                .add(hostname, "sha256/7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=")
-                                .build();
-                        OkHttpClient client = new OkHttpClient.Builder()
-                                .certificatePinner(certificatePinner)
-                                .hostnameVerifier(new HostnameVerifier() {
-                                    @Override
-                                    public boolean verify(String hostname, SSLSession session) {
-                                        //强行返回true 即验证成功
-                                        return true;
-                                    }
-                                }).build();
+//                        String hostname = "www.gohosts.com";
+//                        CertificatePinner certificatePinner = new CertificatePinner.Builder()
+//                                .add(hostname, "sha256/7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=")
+//                                .build();
+//                        OkHttpClient client = new OkHttpClient.Builder()
+//                                .certificatePinner(certificatePinner)
+//                                .hostnameVerifier(new HostnameVerifier() {
+//                                    @Override
+//                                    public boolean verify(String hostname, SSLSession session) {
+//                                        //强行返回true 即验证成功
+//                                        return true;
+//                                    }
+//                                }).build();
 
 //                        OkHttpClient client = new OkHttpClient().newBuilder().hostnameVerifier(new HostnameVerifier() {
 //                            @Override
@@ -85,11 +87,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                                return true;
 //                            }
 //                        }).build();
+
+
+                        // 获取证书输入流
+                        InputStream openRawResource = getApplicationContext().getResources().openRawResource(R.raw.gohosts); //R.raw.bing是bing.com的正确证书，R.raw.bing2_so是hostname=bing.com的so.com的证书，可视为用作测试的虚假bing.com证书
+                        Certificate ca = CertificateFactory.getInstance("X.509").generateCertificate(openRawResource);
+                        // 创建 Keystore 包含我们的证书
+                        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+                        keyStore.load(null, null);
+                        keyStore.setCertificateEntry("ca", ca);
+                        // 创建一个 TrustManager 仅把 Keystore 中的证书 作为信任的锚点
+                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()); // 建议不要使用自己实现的X509TrustManager，而是使用默认的X509TrustManager
+                        trustManagerFactory.init(keyStore);
+                        // 用 TrustManager 初始化一个 SSLContext
+                        sslContext = SSLContext.getInstance("TLS");  //定义：public static SSLContext sslContext = null;
+                        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+
+
+
                         Request request = new Request.Builder()
                                 .url("https://www.gohosts.com/get_data.xml")
                                 .build();
 
-
+                        OkHttpClient client = new OkHttpClient.Builder()
+                                .sslSocketFactory(sslContext.getSocketFactory(),
+                                        (X509TrustManager) trustManagerFactory.getTrustManagers()[0] )
+                                .hostnameVerifier(new HostnameVerifier() {
+                                    @Override
+                                    public boolean verify(String hostname, SSLSession session) {
+                                        //强行返回true 即验证成功
+                                        return true;
+                                    }
+                                }).build();
 
                         Response response = client.newCall(request).execute();
                         String responseData = response.body().string();
