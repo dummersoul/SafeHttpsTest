@@ -64,27 +64,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run(){
 
                     try {
-//                        String hostname = "www.gohosts.com";
-//                        CertificatePinner certificatePinner = new CertificatePinner.Builder()
-//                                .add(hostname, "sha256/7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=")
-//                                .build();
-//                        OkHttpClient client = new OkHttpClient.Builder()
-//                                .certificatePinner(certificatePinner)
-//                                .hostnameVerifier(new HostnameVerifier() {
-//                                    @Override
-//                                    public boolean verify(String hostname, SSLSession session) {
-//                                        //强行返回true 即验证成功
-//                                        return true;
-//                                    }
-//                                }).build();
+                        String hostname = "www.gohosts.com";
+                        CertificatePinner certificatePinner = new CertificatePinner.Builder()
+                                .add(hostname, "sha256/7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=")
+                                .build();
+                        OkHttpClient client = new OkHttpClient.Builder()
+                                .certificatePinner(certificatePinner)
+                                .hostnameVerifier(new HostnameVerifier() {
+                                    @Override
+                                    public boolean verify(String hostname, SSLSession session) {
+                                        //强行返回true 即验证成功
+                                        return true;
+                                    }
+                                }).build();
 
-                        OkHttpClient client = new OkHttpClient().newBuilder().hostnameVerifier(new HostnameVerifier() {
-                            @Override
-                            public boolean verify(String hostname, SSLSession session) {
-                                //强行返回true 即验证成功
-                                return true;
-                            }
-                        }).build();
+//                        OkHttpClient client = new OkHttpClient().newBuilder().hostnameVerifier(new HostnameVerifier() {
+//                            @Override
+//                            public boolean verify(String hostname, SSLSession session) {
+//                                //强行返回true 即验证成功
+//                                return true;
+//                            }
+//                        }).build();
                         Request request = new Request.Builder()
                                 .url("https://www.gohosts.com/get_data.xml")
                                 .build();
