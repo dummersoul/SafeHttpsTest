@@ -21,9 +21,9 @@
 <!--            <pin digest="SHA-256">7VMdvZE3PGbxb0Pgf1PlCp+MI8KZ2ZC5psM8TIylNDA=</pin>-->
 <!--        </pin-set>-->
         利用xml校验证书的公钥文件
-<!--        <trust-anchors>-->
-<!--            <certificates src="@raw/ttt"/>-->
-<!--        </trust-anchors>-->
+        <trust-anchors>
+            <certificates src="@raw/ttt"/>
+        </trust-anchors>
     </domain-config>
 
 

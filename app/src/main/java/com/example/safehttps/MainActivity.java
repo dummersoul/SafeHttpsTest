@@ -18,9 +18,11 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -39,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final String TAG = "[+]MainActivity";
     public static SSLContext sslContext = null;
-
+    X509TrustManager trustManager = null;
 
     TextView responseText;
 
@@ -92,31 +94,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
                         //利用代码校验证书的公钥证书文件
-                        // 获取证书输入流
-                        InputStream openRawResource = getApplicationContext().getResources().openRawResource(R.raw.ttt); //R.raw.bing是bing.com的正确证书，R.raw.bing2_so是hostname=bing.com的so.com的证书，可视为用作测试的虚假bing.com证书
-                        Certificate ca = CertificateFactory.getInstance("X.509").generateCertificate(openRawResource);
-                        // 创建 Keystore 包含我们的证书
-                        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-                        keyStore.load(null, null);
-                        keyStore.setCertificateEntry("ca", ca);
-                        // 创建一个 TrustManager 仅把 Keystore 中的证书 作为信任的锚点
-                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()); // 建议不要使用自己实现的X509TrustManager，而是使用默认的X509TrustManager
-                        trustManagerFactory.init(keyStore);
-                        // 用 TrustManager 初始化一个 SSLContext
-                        sslContext = SSLContext.getInstance("TLS");  //定义：public static SSLContext sslContext = null;
-                        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+//                        // 获取证书输入流
+//                        InputStream openRawResource = getApplicationContext().getResources().openRawResource(R.raw.ttt); //R.raw.bing是bing.com的正确证书，R.raw.bing2_so是hostname=bing.com的so.com的证书，可视为用作测试的虚假bing.com证书
+//                        Certificate ca = CertificateFactory.getInstance("X.509").generateCertificate(openRawResource);
+//                        // 创建 Keystore 包含我们的证书
+//                        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+//                        keyStore.load(null, null);
+//                        keyStore.setCertificateEntry("ca", ca);
+//                        // 创建一个 TrustManager 仅把 Keystore 中的证书 作为信任的锚点
+//                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm()); // 建议不要使用自己实现的X509TrustManager，而是使用默认的X509TrustManager
+//                        trustManagerFactory.init(keyStore);
+//                        // 用 TrustManager 初始化一个 SSLContext
+//                        sslContext = SSLContext.getInstance("TLS");  //定义：public static SSLContext sslContext = null;
+//                        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+//
+//                        OkHttpClient client = new OkHttpClient.Builder()
+//                                .sslSocketFactory(sslContext.getSocketFactory(),
+//                                        (X509TrustManager) trustManagerFactory.getTrustManagers()[0] )
+//                                .hostnameVerifier(new HostnameVerifier() {
+//                                    @Override
+//                                    public boolean verify(String hostname, SSLSession session) {
+//                                        //强行返回true 即验证成功
+//                                        return true;
+//                                    }
+//                                }).build();
+
+                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+                        trustManagerFactory.init((KeyStore) null);
+                        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+                        if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+                            throw new IllegalStateException("Unexpected default trust managers:" + Arrays.toString(trustManagers));
+                        }
+                        trustManager = (X509TrustManager) trustManagers[0];
 
                         OkHttpClient client = new OkHttpClient.Builder()
-                                .sslSocketFactory(sslContext.getSocketFactory(),
-                                        (X509TrustManager) trustManagerFactory.getTrustManagers()[0] )
+                                .sslSocketFactory(Objects.requireNonNull(ClientSSLSocketFactory.getSocketFactory(getApplicationContext())), Objects.requireNonNull(trustManager))
                                 .hostnameVerifier(new HostnameVerifier() {
                                     @Override
                                     public boolean verify(String hostname, SSLSession session) {
                                         //强行返回true 即验证成功
                                         return true;
                                     }
-                                }).build();
-
+                        }).build();
 
 
                         Request request = new Request.Builder()
