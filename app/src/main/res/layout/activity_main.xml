@@ -11,10 +11,20 @@
         android:id="@+id/button1"
         android:text="Send Request" />
 
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/button2"
+        android:text="Send WebView" />
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/request_text" />
 
+    <WebView
+        android:id="@+id/id_webview"
+        android:layout_width="match_parent"
+        android:layout_height="400dp" />
 
 </LinearLayout>

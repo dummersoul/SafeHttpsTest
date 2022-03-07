@@ -1,21 +1,31 @@
 package com.example.safehttps;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.net.http.SslCertificate;
+import android.net.http.SslError;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.webkit.SslErrorHandler;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -42,22 +52,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String TAG = "[+]MainActivity";
     public static SSLContext sslContext = null;
     X509TrustManager trustManager = null;
-
     TextView responseText;
+    WebView mWebview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Button sendRequest = (Button) findViewById(R.id.button1);
+        Button sendWebView = (Button) findViewById(R.id.button2);
         responseText = (TextView) findViewById(R.id.request_text);
+        mWebview = (WebView) findViewById(R.id.id_webview);
         sendRequest.setOnClickListener(this);
+        sendWebView.setOnClickListener(this);
     }
 
         @Override
         public void onClick(View view){
             if (view.getId() == R.id.button1){
                 sendRequestWithOkHttp();
+            } else if (view.getId() == R.id.button2){
+                sendWebView();
             }
         }
 
@@ -68,6 +83,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void run(){
 
                     try {
+                        //正常okhttp https请求
+                        OkHttpClient client = new OkHttpClient().newBuilder().hostnameVerifier(new HostnameVerifier() {
+                            @Override
+                            public boolean verify(String hostname, SSLSession session) {
+                                //强行返回true 即验证成功
+                                return true;
+                            }
+                        }).build();
+
+
                         //利用代码校验证书的公钥hash
 //                        String hostname = "www.gohosts.com";
 //                        CertificatePinner certificatePinner = new CertificatePinner.Builder()
@@ -83,14 +108,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                                    }
 //                                }).build();
 
-                        //正常okhttp https请求
-//                        OkHttpClient client = new OkHttpClient().newBuilder().hostnameVerifier(new HostnameVerifier() {
-//                            @Override
-//                            public boolean verify(String hostname, SSLSession session) {
-//                                //强行返回true 即验证成功
-//                                return true;
-//                            }
-//                        }).build();
 
 
                         //利用代码校验证书的公钥证书文件
@@ -119,44 +136,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                                    }
 //                                }).build();
 
-                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
-                        trustManagerFactory.init((KeyStore) null);
-                        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-                        if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
-                            throw new IllegalStateException("Unexpected default trust managers:" + Arrays.toString(trustManagers));
-                        }
-                        trustManager = (X509TrustManager) trustManagers[0];
 
-                        OkHttpClient client = new OkHttpClient.Builder()
-                                .sslSocketFactory(Objects.requireNonNull(ClientSSLSocketFactory.getSocketFactory(getApplicationContext())), Objects.requireNonNull(trustManager))
-                                .hostnameVerifier(new HostnameVerifier() {
-                                    @Override
-                                    public boolean verify(String hostname, SSLSession session) {
-                                        //强行返回true 即验证成功
-                                        return true;
-                                    }
-                        }).build();
+                        //服务器校验客户端的证书ClientSSLSocketFactory，服务端将客户端的证书进行绑定
+//                        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+//                        trustManagerFactory.init((KeyStore) null);
+//                        TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+//                        if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+//                            throw new IllegalStateException("Unexpected default trust managers:" + Arrays.toString(trustManagers));
+//                        }
+//                        trustManager = (X509TrustManager) trustManagers[0];
+//
+//                        OkHttpClient client = new OkHttpClient.Builder()
+//                                .sslSocketFactory(Objects.requireNonNull(ClientSSLSocketFactory.getSocketFactory(getApplicationContext())), Objects.requireNonNull(trustManager))
+//                                .hostnameVerifier(new HostnameVerifier() {
+//                                    @Override
+//                                    public boolean verify(String hostname, SSLSession session) {
+//                                        //强行返回true 即验证成功
+//                                        return true;
+//                                    }
+//                        }).build();
 
 
                         Request request = new Request.Builder()
                                 .url("https://ttt.com/")
                                 .build();
 
-
                         Response response = client.newCall(request).execute();
                         String responseData = response.body().string();
                         Log.d(TAG, "I am running! ");
                         showResponse(responseData);   //直接显示在主活动页面
- 
-                         
+
                     }catch (Exception e){
                         e.printStackTrace();
                     }
                 }}).start();
         }
-
-
 
 
     private void showResponse(final String response) {
@@ -168,6 +183,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
+    /***
+     * WebView https证书绑定
+     */
+    private void sendWebView(){
+        MyWebViewClient mWebViewClient = new MyWebViewClient();
+        mWebViewClient.setCheckflag("checkCerts");
+        mWebview.setWebViewClient(mWebViewClient);
+        mWebview.loadUrl("https://ttt.com");
+
+    }
+
+
+    private class MyWebViewClient extends WebViewClient {
+        
+        private String checkflag="checkCerts"; // 是否忽略证书校验
+
+        public void setCheckflag(String checkflag) {
+            this.checkflag = checkflag;
+        }
+
+        @Override
+        public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+            if("trustAllCerts".equals(checkflag)){
+                handler.proceed();
+                Log.d(TAG, "WebView ok!");
+            }else {
+                handler.cancel();
+//                mWebview.stopLoading();
+                Log.d(TAG, "WebView error!");
+                Toast.makeText(MainActivity.this, "证书异常，停止访问", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
 
 }
